@@ -176,6 +176,8 @@ app.get('/state/:selected_state', (req, res) => {
 			res.end();
 		}
         console.log("HANDLING " + req.url);
+		response = response.replace("US_States", states.indexOf(state) + 1);
+		response = response.replace("Alphabetical_Index", states.indexOf(state) + 1);
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
 						States.state_name as State,
@@ -221,9 +223,7 @@ app.get('/state/:selected_state', (req, res) => {
 				var prevState = GetPrevState(row.Abbreviation);
 				var nextState = GetNextState(row.Abbreviation);
 				response = response.replace('href="">prev_url', 'href="/state/' + prevState + '">' + prevState);
-				//response = response.replace("prev_url", prevState);
 				response = response.replace('href="">next_url', 'href="/state/' + nextState + '">' + nextState);
-				//response = response.replace("next_url", nextState);
 
                 WriteHtml(res, response);
             }
