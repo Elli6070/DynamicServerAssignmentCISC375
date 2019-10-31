@@ -48,7 +48,6 @@ app.get('/', (req, res) => {
                     Consumption.nuclear as Nuclear,
                     Consumption.petroleum as Petroleum
                     From Consumption
-                    Inner Join States on States.state_abbreviation = Consumption.state_abbreviation
                     Where Consumption.year = ?`;
       
         db.each(query, 2017, (err, row) => {
@@ -101,7 +100,6 @@ app.get('/year/:selected_year', (req, res) => {
         let NuclearSum = 0;
         let PetroleumSum = 0;
         console.log("HANDLING " + req.url);
-        console.log(year);
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
                     Consumption.state_abbreviation as State,
@@ -111,7 +109,6 @@ app.get('/year/:selected_year', (req, res) => {
                     Consumption.nuclear as Nuclear,
                     Consumption.petroleum as Petroleum
                     From Consumption
-                    Inner Join States on States.state_abbreviation = Consumption.state_abbreviation
                     Where Consumption.year = ?`;
       
         db.each(query, year, (err, row) => {
@@ -166,6 +163,7 @@ app.get('/state/:selected_state', (req, res) => {
         console.log("HANDLING " + req.url);
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
+						States.state_name as State,
                         Consumption.renewable as Renewable,
                         Consumption.coal as Coal,
                         Consumption.natural_gas as NaturalGas,
@@ -197,7 +195,7 @@ app.get('/state/:selected_state', (req, res) => {
 
             if (row.Year == 2017) {
 
-                response = response.replace("var state", "var state = '" + row.Name + "'");
+                response = response.replace("var state", "var state = '" + row.State + "'");
                 response = response.replace("var coal_counts", "var coal_counts = [" + coal_count + "]");
                 response = response.replace("var natural_counts", "var natural_counts = [" + natural_count + "]");
                 response = response.replace("var nuclear_counts", "var nuclear_counts = [" + nuclear_count + "]");
