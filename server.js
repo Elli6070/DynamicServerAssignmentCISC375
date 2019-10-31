@@ -26,7 +26,12 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
 
 app.use(express.static(public_dir));
 
-
+var states = ['AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL',
+    'GA', 'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME',
+    'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM', 'NV',
+    'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VA',
+    'VT', 'WA', 'WI', 'WV', 'WY'];
+	
 // GET request handler for '/'
 app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
@@ -164,6 +169,7 @@ app.get('/state/:selected_state', (req, res) => {
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
 						States.state_name as State,
+						Consumption.state_abbreviation as Abbreviation,
                         Consumption.renewable as Renewable,
                         Consumption.coal as Coal,
                         Consumption.natural_gas as NaturalGas,
@@ -201,6 +207,13 @@ app.get('/state/:selected_state', (req, res) => {
                 response = response.replace("var nuclear_counts", "var nuclear_counts = [" + nuclear_count + "]");
                 response = response.replace("var petroleum_counts", "var petroleum_counts = [" + petroleum_count + "]");
                 response = response.replace("var renewable_counts", "var renewable_counts = [" + renewable_count + "]");
+				
+				var prevState = GetPrevState(row.Abbreviation);
+				var nextState = GetNextState(row.Abbreviation);
+				response = response.replace('href="">prev_url', 'href="/state/' + prevState + '">' + prevState);
+				//response = response.replace("prev_url", prevState);
+				response = response.replace('href="">next_url', 'href="/state/' + nextState + '">' + nextState);
+				//response = response.replace("next_url", nextState);
 
                 WriteHtml(res, response);
             }
@@ -245,6 +258,26 @@ function WriteHtml(res, html) {
     res.writeHead(200, {'Content-Type': 'text/html'});
     res.write(html);
     res.end();
+}
+
+function GetPrevState(state){
+	var index = states.indexOf(state);
+	if( index == 0){
+		return states[states.length - 1];
+	}
+	else{
+		return states[index - 1];
+	}
+}
+
+function GetNextState(state){
+	var index = states.indexOf(state);
+	if( index == (states.length - 1)){
+		return states[0];
+	}
+	else{
+		return states[index + 1];
+	}
 }
 
 var server = app.listen(port);
