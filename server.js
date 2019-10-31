@@ -104,6 +104,11 @@ app.get('/year/:selected_year', (req, res) => {
         let NaturalGasSum = 0;
         let NuclearSum = 0;
         let PetroleumSum = 0;
+		if(year > 2017 || year < 1960){
+			res.writeHead(404, {'Content-Type': 'text/plain'});
+			res.write("can't find any data for the year " + year);
+			res.end();
+		}
         console.log("HANDLING " + req.url);
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
@@ -165,6 +170,11 @@ app.get('/state/:selected_state', (req, res) => {
         let natural_count = [];
         let nuclear_count = [];
         let petroleum_count = [];
+		if(!states.includes(state)){
+			res.writeHead(404, {'Content-Type': 'text/plain'});
+			res.write("Can't find any data for the state " + state);
+			res.end();
+		}
         console.log("HANDLING " + req.url);
         // modify `response` here
         var query = `SELECT Consumption.year as Year,
