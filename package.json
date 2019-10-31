@@ -3,13 +3,13 @@
     "version": "0.0.0",
     "description": "Dynamic Web Server using Node JS",
     "author": {
-        "name": "",
-        "email": ""
+        "name": "Drew Elliott",
+        "email": "elli6070@stthomas.edu"
     },
     "contributors": [
         {
-            "name": "",
-            "email": ""
+            "name": "Salmaan Saiyed",
+            "email": "saiy1643@stthomas.edu"
         },
         {
             "name": "",
@@ -19,7 +19,7 @@
     "main": "server.js",
     "repository": {
         "type": "git",
-        "url": ""
+        "url": "https://github.com/Elli6070/DynamicServerAssignmentCISC375"
     },
     "dependencies": {
         "express": "^4.17.1",
