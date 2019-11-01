@@ -253,19 +253,27 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
         let response = template;
         let energy_type = req.url.substring(13);
         var energy_counts = {};
-        var energy = ["Coal", "Natural_gas", "Nuclear", "Petroleum", "Renewable"];
+        var year;
+        var total;
+        var table = "";
+        var energy = ["coal", "natural_gas", "nuclear", "petroleum", "renewable"];
+        if(!energy.includes(energy_type)){
+            res.writeHead(404, {'Content-Type': 'text/plain'});
+            res.write("Can't find any data for energy type " + energy_type);
+            res.end();
+        }
         // modify `response` here
         response = response.replace("<title>US ", "<title>US " + energy_type.substring(0,1).toUpperCase() + energy_type.substring(1) + " ");
-        response = response.replace("var energy_type", "var energy_type = \x22" + energy_type.substring(0,1).toUpperCase() + energy_type.substring(1) + "\x22;");
         response = response.replace("<h2>Consumption Snapshot</h2>", "<h2>" + energy_type.substring(0,1).toUpperCase() + energy_type.substring(1) + " Consumption Snapshot</h2>");
-
+        response = response.replace("noimage",energy_type);
         if (energy_type == "coal") {
-            response = response.replace("href=\x22\x22>YY</a>", "href=\x22/energy-type/Natural_gas\x22>Natural Gas</a>");
+            response = response.replace("href=\x22\x22>YY</a>", "href=\x22/energy-type/natural_gas\x22>Natural Gas</a>");
             response = response.replace("href=\x22\x22>XX</a>", "href=\x22/energy-type/renewable\x22>Renewable</a>"); //change to path.join?
         } else if (energy_type == "natural_gas") {
             response = response.replace("href=\x22\x22>XX</a>", "href=\x22/energy-type/coal\x22>Coal</a>");
             response = response.replace("href=\x22\x22>YY</a>", "href=\x22/energy-type/nuclear\x22>Nuclear</a>");
-
+            response = response.replace("<title>US ", "<title>US Natural Gas ");
+            response = response.replace("<h2>Consumption Snapshot</h2>", "<h2>Natural Gas Consumption Snapshot</h2>");
         } else if (energy_type == "nuclear") {
             response = response.replace("href=\x22\x22>XX</a>", "href=\x22/energy-type/natural_gas\x22>Natural Gas</a>");
             response = response.replace("href=\x22\x22>YY</a>", "href=\x22/energy-type/petroleum\x22>Petroleum</a>");
@@ -276,37 +284,47 @@ app.get('/energy-type/:selected_energy_type', (req, res) => {
             response = response.replace("href=\x22\x22>XX</a>", "href=\x22/energy-type/petroleum\x22>Petroleum</a>");
             response = response.replace("href=\x22\x22>YY</a>", "href=\x22/energy-type/coal\x22>Coal</a>");
         }
-        //for (j = 0; j <= (2017 - 1960); j++) {
+
         for (var i = 0; i <= 50; i++) {
             energy_counts[states[i]] = [];
         }
-        console.log(energy_counts);
-        for (var year = 1960; year <= 2017; year++) {
 
+        var count = 0;
+        db.all('SELECT * FROM Consumption ORDER BY state_abbreviation,year', (err, rows) => {
+            for (var m = 0; m < rows.length; m++) {
+                if (energy_type == "coal") {
+                    energy_counts[rows[m].state_abbreviation].push(rows[m].coal);
+                } else if (energy_type == "natural_gas") {
+                    energy_counts[rows[m].state_abbreviation].push(rows[m].natural_gas);
+                } else if (energy_type == "nuclear") {
+                    energy_counts[rows[m].state_abbreviation].push(rows[m].nuclear);
+                } else if (energy_type == "petroleum") {
+                    energy_counts[rows[m].state_abbreviation].push(rows[m].petroleum);
+                } else if (energy_type == "renewable") {
+                    energy_counts[rows[m].state_abbreviation].push(rows[m].renewable);
+                }
+                count++;
+            }
+            if (count >= rows.length) {
+                response = response.replace("energy_type", "energy_type = " + energy_type);
+                response = response.replace("energy_counts", "energy_counts = " + JSON.stringify(energy_counts));
 
-            db.each("SELECT * FROM Consumption WHERE year = ? ORDER BY state_abbreviation" , [year], (err, row) => {
+                for (var l = 0; l <= (2017-1960); l++) {
+                    table = table + "<td>" + (1960 + l) + "</td>";
+                    total = 0;
+                    for (var i = 0; i <= 50; i++) {
+                        table = table + "<td>" + energy_counts[states[i]][l] + "</td>";
+                        total = total + energy_counts[states[i]][l];
+                    }
+                    table = table + "<td>" + total + "</td>";
+                    table = "<tr>" + table + "</tr>";
+                }
 
-                //console.log("TEST PRINT YEAR " + year + " STATE: " + row.state_abbreviation);
-                //console.log(row);
-                //console.log(rows[2]);
-                var thestate = row.state_abbreviation;
-                energy_counts.thestate[year-1960] = parseInt(row.coal);
-                //current_energy_counts.push(row.coal);
-                //energy_counts[row.state_abbreviation] = current_energy_counts;
-                //current_energy_counts.push(row.coal);//if statements for energy type
-                
-                //var total = row.coal + row.natural_gas + row.nuclear + row.petroleum + row.renewable;
-                //var currentrow = "<th>" + row.state_abbreviation + "</th>" + "<th>" + row.coal + "</th>" + "<th>" + row.natural_gas + "</th>" + "<th>" + row.nuclear + "</th>" + "<th>" + row.petroleum + "</th>" + "<th>" + row.renewable + "</th>" + "<th>" + total + "</th>";
-                //response = response.replace("</tbody>", "<tr>" + currentrow + "</tr></tbody>");
-                //response = response.replace("<th>" + row.state_abbreviation + "</th>", "<tr>" + currentrow + "</tr></tbody>");
-                
-            });
-            console.log(energy_counts);
-        }
-        //console.log("This is the coal count: " + coal_count);
-        response = response.replace("var energy_counts;", "var energy_counts = " + energy_counts + ";");
-        
-        WriteHtml(res, response);
+                response = response.replace("<!-- Data to be inserted here -->",table);
+                response = response.replace("var energy_counts;", "var energy_counts = " + energy_counts.toString());
+                WriteHtml(res, response);
+            }
+        });
     }).catch((err) => {
         Write404Error(res);
     });
